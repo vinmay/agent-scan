@@ -65,6 +65,9 @@ Currently supports:
 **Python agent frameworks**  
 (Initially generic tool patterns — framework-agnostic detection)
 
+**Capabilities detected (phase-1)**  
+EXECUTE, READ, WRITE, SEND, SECRETS
+
 ---
 
 ## Installation
@@ -102,6 +105,8 @@ Run the example:
 ```bash
 agent-scan examples/demo-agent
 ```
+
+Demo agents include file, network, secrets, and dynamic execution patterns for static scanning in `examples/demo-agent/`.
 
 ---
 
