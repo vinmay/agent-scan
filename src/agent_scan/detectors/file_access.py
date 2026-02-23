@@ -15,12 +15,8 @@ from typing import List
 from .base import CapabilityFinding
 from .registry import register_detector
 
-READ_FUNCS = {
-    "open": {"r", "rb", ""},  # empty string = default -> read
-}
-WRITE_FUNCS = {
-    "open": {"w", "wb", "a", "ab", "x"},
-}
+READ_OPEN_MODES = {"r", "rb", ""}  # empty string = default -> read
+WRITE_OPEN_MODES = {"w", "wb", "a", "ab", "x"}
 
 PATHLIB_READ_ATTRS = {"read_text", "read_bytes"}
 PATHLIB_WRITE_ATTRS = {"write_text", "write_bytes"}
@@ -89,10 +85,10 @@ def scan_file(path: str, content: str) -> List[CapabilityFinding]:
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "open":
             mode = open_mode_from_call(node) or ""  # default read
             evidence = f"open(..., mode={mode!r})"
-            if mode in WRITE_FUNCS:
+            if mode in WRITE_OPEN_MODES:
                 findings.append(CapabilityFinding("WRITE", evidence, path, getattr(node, "lineno", None), 0.95))
             else:
-                # treat default/read modes as READ
+                # treat default/read modes and unknown modes conservatively as READ
                 findings.append(CapabilityFinding("READ", evidence, path, getattr(node, "lineno", None), 0.9))
 
         # attribute calls: Path.read_text(), Path.write_text(), json.load(open(...)), etc.
@@ -149,7 +145,7 @@ def scan_file(path: str, content: str) -> List[CapabilityFinding]:
                 if isinstance(ctx, ast.Call) and isinstance(ctx.func, ast.Name) and ctx.func.id == "open":
                     mode = open_mode_from_call(ctx) or ""
                     evidence = f"with open(..., mode={mode!r})"
-                    if mode in WRITE_FUNCS:
+                    if mode in WRITE_OPEN_MODES:
                         findings.append(CapabilityFinding("WRITE", evidence, path, getattr(node, "lineno", None), 0.95))
                     else:
                         findings.append(CapabilityFinding("READ", evidence, path, getattr(node, "lineno", None), 0.9))
