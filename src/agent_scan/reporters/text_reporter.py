@@ -17,10 +17,41 @@ def human_report(results: Dict[str, Any]) -> str:
         lines.append("No detected capabilities (phase-1 checks).")
         lines.append("")
 
-    lines.append("Possible Impact")
-    lines.append("-" * 15)
-    for imp in results.get("possible_impacts", []):
-        lines.append(f"  {imp}")
+    lines.append("Combined Risks")
+    lines.append("-" * 14)
+    risks = results.get("risks", [])
+    if risks:
+        for risk in risks:
+            severity = str(risk.get("severity", "unknown")).upper()
+            title = risk.get("title", "Unknown Risk")
+            lines.append(f"  [{severity}] {title}")
+            lines.append(f"    why: {risk.get('why', '')}")
+            caps = ", ".join(risk.get("capabilities_triggered", []))
+            lines.append(f"    capabilities: {caps}")
+    else:
+        lines.append("  None inferred from combined-capability rules.")
     lines.append("")
+
+    lines.append("Findings")
+    lines.append("-" * 8)
+    findings = results.get("findings", [])
+    if findings:
+        for item in findings:
+            finding = item.get("finding", {})
+            detector = item.get("detector", "unknown")
+            file_path = finding.get("file", "unknown")
+            lineno = finding.get("lineno")
+            location = f"{file_path}:{lineno}" if lineno else file_path
+            risk_level = str(finding.get("risk_level", "unknown")).upper()
+            lines.append(
+                f"  [{risk_level}] {finding.get('capability')} via {finding.get('evidence')} "
+                f"({detector} @ {location})"
+            )
+            lines.append(f"    explanation: {finding.get('explanation', '')}")
+            lines.append(f"    impact: {finding.get('impact', '')}")
+    else:
+        lines.append("  No findings detected.")
+    lines.append("")
+
     lines.append(f"Scanned: {results.get('num_files_scanned', 0)} python files under {results.get('target')}")
     return "\n".join(lines)

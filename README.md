@@ -109,17 +109,17 @@ pip install -e .[dev]
 Run the example:
 
 ```bash
-agent-scan examples/demo-agent
+agent-scan examples/demo_agent
 ```
 
-Demo agents include file, network, secrets, and dynamic execution patterns for static scanning in `examples/demo-agent/`.
+Demo agents include file, network, secrets, and dynamic execution patterns for static scanning in `examples/demo_agent/`.
 
 ---
 
 ### Option 3 — Run without installing
 
 ```bash
-python -m agent_scan.cli examples/demo-agent
+python -m agent_scan.cli examples/demo_agent
 ```
 
 ---
@@ -138,7 +138,7 @@ agent-scan [path] [--json] [--rules=all|core]
 ### Examples
 
 agent-scan .
-agent-scan ./examples/demo-agent --json
+agent-scan ./examples/demo_agent --json
 
 ---
 

@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import Dict, Any, List
 from agent_scan.detectors.registry import get_detectors, call_detector
 from agent_scan.detectors.base import CapabilityFinding
-import os
+from agent_scan.analysis.finding_enrichment import enrich_finding
+from agent_scan.analysis.impact import analyze_combined_capabilities
 
 def _gather_py_files(path: Path) -> List[Path]:
     """Return list of .py files under path (or single file if path is file)."""
@@ -52,7 +53,7 @@ def scan_path(path: Path, ruleset: str = "core") -> Dict[str, Any]:
          ...
       ],
       "capabilities": ["EXECUTE", "READ"],
-      "possible_impacts": [...],
+      "risks": [...],
     }
     """
     path = Path(path)
@@ -78,27 +79,18 @@ def scan_path(path: Path, ruleset: str = "core") -> Dict[str, Any]:
             for f in raw:
                 # f expected to be CapabilityFinding (or similar)
                 normalized = _normalize_finding(f)
-                findings.append({"detector": name, "finding": normalized})
+                enriched = enrich_finding(normalized)
+                findings.append({"detector": name, "finding": enriched})
 
     # aggregate capabilities
     capability_keys = sorted({entry["finding"]["capability"] for entry in findings if entry["finding"].get("capability")})
-
-    # derive simple possible impacts (v1)
-    possible_impacts = []
-    if "EXECUTE" in capability_keys:
-        possible_impacts.append("Commands could be executed on the host machine.")
-    if "READ" in capability_keys and "SEND" in capability_keys:
-        possible_impacts.append("Local files could be read and transmitted externally (data exfiltration risk).")
-    if "SECRETS" in capability_keys and "SEND" in capability_keys:
-        possible_impacts.append("Credentials or secrets could be transmitted externally.")
-    if not possible_impacts:
-        possible_impacts.append("No high-confidence risky capability chains detected by phase-1 checks.")
+    risks = analyze_combined_capabilities([entry["finding"] for entry in findings])
 
     report = {
         "target": str(path),
         "num_files_scanned": len(py_files),
         "findings": findings,
         "capabilities": capability_keys,
-        "possible_impacts": possible_impacts,
+        "risks": risks,
     }
     return report

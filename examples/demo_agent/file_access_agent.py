@@ -17,16 +17,20 @@ from pathlib import Path
 import json
 import zipfile
 
+DEMO_HOME = Path("/tmp/agent_scan_demo_home")
+DEMO_DOCUMENTS = DEMO_HOME / "documents"
+DEMO_SENSITIVE_PATHS = [
+    DEMO_HOME / ".ssh" / "id_rsa",
+    DEMO_HOME / ".aws" / "credentials",
+    Path("/etc/passwd"),
+    DEMO_DOCUMENTS,
+]
+
 # --- Suspicious-looking operations (static detectors should flag these) ---
 
 def read_sensitive_files():
     """Examples of reading files that often contain secrets or sensitive info."""
-    candidates = [
-        Path.home() / ".ssh" / "id_rsa",            # private ssh key
-        Path.home() / ".aws" / "credentials",       # AWS creds file
-        Path("/etc/passwd"),                        # system account file (harmless)
-        Path.home() / "Documents",                  # user documents folder (potential PII)
-    ]
+    candidates = DEMO_SENSITIVE_PATHS
     results = {}
     for p in candidates:
         try:
@@ -48,7 +52,7 @@ def copy_user_documents(target_dir: Path):
     """Copy documents (dangerous if real) to a new folder. Demonstrates write permissions."""
     target_dir = Path(target_dir)
     target_dir.mkdir(parents=True, exist_ok=True)
-    src = Path.home() / "Documents"
+    src = DEMO_DOCUMENTS
     if not src.exists():
         return {"status": "no_documents"}
     # WARNING: this could copy many files; require explicit run to execute
@@ -69,7 +73,7 @@ def write_config_override():
 def archive_documents(out_zip: Path):
     """Create a zip archive of Documents — shows archive/write behavior."""
     out_zip = Path(out_zip)
-    src = Path.home() / "Documents"
+    src = DEMO_DOCUMENTS
     if not src.exists():
         return {"status": "no_documents"}
     with zipfile.ZipFile(out_zip, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -108,6 +112,7 @@ def _confirm_run():
 
 def main():
     print("Demo agent: file_power_agent (static-only by default).")
+    print(f"Using generic demo base path: {DEMO_HOME}")
     if not _confirm_run():
         print("Run aborted - not executing any file actions.")
         return
@@ -118,7 +123,7 @@ def main():
     for k, v in r.items():
         print(f" - {k}: {str(v)[:120]!r}")
 
-    print("Archiving Documents to /tmp/documents_demo.zip ...")
+    print("Archiving demo documents to /tmp/documents_demo.zip ...")
     a = archive_documents(Path("/tmp/documents_demo.zip"))
     print("Archive result:", a)
 

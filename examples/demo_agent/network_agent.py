@@ -1,4 +1,4 @@
-# examples/demo-agent/network_agent.py
+# examples/demo_agent/network_agent.py
 """
 Demo agent showing multiple network call styles.
 
@@ -6,7 +6,7 @@ This file exists to exercise static detectors; the scanner should flag
 calls to requests, urllib, socket, httpx, and websockets patterns.
 
 Run manually (will perform real requests) only if you understand the effects:
-    python examples/demo-agent/network_agent.py
+    python examples/demo_agent/network_agent.py
 """
 
 import requests

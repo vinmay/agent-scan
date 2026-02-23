@@ -19,12 +19,18 @@ class CapabilityFinding:
         file: path of the scanned file
         lineno: optional 1-based line number for the evidence
         confidence: float between 0.0 and 1.0 (higher is more confident)
+        explanation: human-readable explanation of why this capability matters
+        impact: practical implication if this capability is abused
+        risk_level: normalized risk level for this finding ("low"|"medium"|"high")
     """
     capability: str
     evidence: str
     file: str
     lineno: Optional[int] = None
     confidence: float = 0.9
+    explanation: Optional[str] = None
+    impact: Optional[str] = None
+    risk_level: str = "medium"
 
     def as_dict(self) -> Dict[str, Any]:
         """Return a serializable dict representation (helpful for JSON reporter)."""
