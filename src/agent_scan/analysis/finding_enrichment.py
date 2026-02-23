@@ -56,7 +56,16 @@ def enrich_finding(finding: Dict[str, Any]) -> Dict[str, Any]:
     capability = finding.get("capability")
     detail = CAPABILITY_DETAILS.get(capability, DEFAULT_DETAILS)
     enriched = dict(finding)
-    enriched.setdefault("risk_level", detail["risk_level"])
-    enriched.setdefault("explanation", detail["explanation"])
-    enriched.setdefault("impact", detail["impact"])
+
+    # Detectors currently emit CapabilityFinding defaults (None/"medium").
+    # Replace missing/default values with capability-specific metadata.
+    if not enriched.get("explanation"):
+        enriched["explanation"] = detail["explanation"]
+    if not enriched.get("impact"):
+        enriched["impact"] = detail["impact"]
+
+    current_risk = enriched.get("risk_level")
+    if not current_risk or str(current_risk).lower() == "medium":
+        enriched["risk_level"] = detail["risk_level"]
+
     return enriched

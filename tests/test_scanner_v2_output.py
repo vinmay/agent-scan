@@ -24,9 +24,9 @@ def test_scanner_outputs_enriched_findings_and_risks(tmp_path: Path):
     assert "SEND" in report["capabilities"]
 
     finding = report["findings"][0]["finding"]
-    assert "explanation" in finding
-    assert "impact" in finding
-    assert "risk_level" in finding
+    assert finding.get("explanation")
+    assert finding.get("impact")
+    assert finding.get("risk_level") in {"medium", "high", "low"}
 
 
 def test_scanner_detects_destructive_agent_risk(tmp_path: Path):
