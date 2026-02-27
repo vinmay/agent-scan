@@ -11,6 +11,7 @@ Detects common patterns that indicate reading or writing files:
 Returns CapabilityFinding(capability="READ"|"WRITE", evidence=..., file=..., lineno=..., confidence=...)
 """
 import ast
+import warnings
 from typing import List
 from .base import CapabilityFinding
 from .registry import register_detector
@@ -28,7 +29,9 @@ OS_WRITE_FUNCS = {"remove", "unlink", "replace", "rename"}
 def scan_file(path: str, content: str) -> List[CapabilityFinding]:
     findings: List[CapabilityFinding] = []
     try:
-        tree = ast.parse(content)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SyntaxWarning)
+            tree = ast.parse(content)
     except Exception:
         return findings
 

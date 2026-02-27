@@ -3,12 +3,15 @@ from typing import List
 from .base import CapabilityFinding
 from .registry import register_detector
 import ast
+import warnings
 
 @register_detector("shell_exec")
 def scan_file(path: str, content: str) -> List[CapabilityFinding]:
     results = []
     try:
-        tree = ast.parse(content)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SyntaxWarning)
+            tree = ast.parse(content)
     except Exception:
         return results
     for node in ast.walk(tree):

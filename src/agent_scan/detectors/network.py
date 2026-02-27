@@ -8,6 +8,7 @@ Returns CapabilityFinding(capability="SEND", evidence=..., file=..., lineno=...,
 """
 from typing import List
 import ast
+import warnings
 from .base import CapabilityFinding
 from .registry import register_detector
 
@@ -51,7 +52,9 @@ LITERAL_URL_CALL_NAMES = {
 def scan_file(path: str, content: str) -> List[CapabilityFinding]:
     findings: List[CapabilityFinding] = []
     try:
-        tree = ast.parse(content)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SyntaxWarning)
+            tree = ast.parse(content)
     except Exception:
         return findings
 

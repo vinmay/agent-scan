@@ -16,6 +16,7 @@ Heuristics include:
 Returns CapabilityFinding(capability="AUTONOMY", evidence=..., file=..., lineno=..., confidence=...)
 """
 import ast
+import warnings
 from typing import List
 from .base import CapabilityFinding
 from .registry import register_detector
@@ -42,7 +43,9 @@ AUTONOMY_START_METHODS = {
 def scan_file(path: str, content: str) -> List[CapabilityFinding]:
     findings: List[CapabilityFinding] = []
     try:
-        tree = ast.parse(content)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SyntaxWarning)
+            tree = ast.parse(content)
     except Exception:
         return findings
 
