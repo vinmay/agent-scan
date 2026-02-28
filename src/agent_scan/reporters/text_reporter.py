@@ -53,9 +53,34 @@ def human_report(results: Dict[str, Any]) -> str:
         lines.append("  No findings detected.")
     lines.append("")
 
+    # TypeScript entry points
+    ts_entry_points = results.get("ts_entry_points", [])
+    if ts_entry_points:
+        lines.append("TypeScript Entry Points (LLM-controlled surface)")
+        lines.append("-" * 49)
+        for ep in ts_entry_points:
+            ptype = ep.get("pattern_type", "unknown")
+            name  = ep.get("name", "unknown")
+            fpath = ep.get("file", "")
+            lno   = ep.get("lineno", "")
+            lines.append(f"  • {name}  ({ptype} @ {fpath}:{lno})")
+        lines.append("")
+
     if results.get("num_files_scanned", 0) == 0:
-        lines.append("No Python files were found for analysis.")
-        lines.append("Current support: Python code only.")
+        other_languages = results.get("other_languages", [])
+        if ts_entry_points:
+            lines.append("⚠  Full capability analysis requires Python source.")
+            lines.append("   TypeScript function bodies are not yet analyzed.")
+            lines.append("   Entry points above show what the LLM can call.")
+        elif other_languages:
+            lang_summary = ", ".join(
+                f"{l['language']} ({l['count']} files)" for l in other_languages
+            )
+            lines.append(f"No Python or TypeScript files were found for analysis.")
+            lines.append(f"Detected: {lang_summary}")
+            lines.append("agent-scan currently supports Python (full analysis) and TypeScript (entry points).")
+        else:
+            lines.append("No Python or TypeScript files were found for analysis.")
         lines.append("")
 
     lines.append("Static analysis only: this report reflects code patterns, not runtime behavior or exploitability.")

@@ -11,6 +11,7 @@ from agent_scan.analysis.finding_enrichment import enrich_finding
 from agent_scan.analysis.impact import analyze_combined_capabilities
 from agent_scan.source_loader import ProgressCallback
 from agent_scan.source_loader import resolve_target
+from agent_scan.ts_entry_points import scan_ts_files, TSEntryPoint
 from agent_scan import detectors  # noqa: F401 - ensures detector modules register themselves
 
 # Directory name components that universally indicate non-agent-runtime paths.
@@ -25,6 +26,71 @@ _EXCLUDED_DIR_PARTS = frozenset({
     # benchmark infrastructure
     "benchmark", "benchmarks",
 })
+
+# Extension → human-readable language name for the "unsupported language" notice.
+_EXT_TO_LANGUAGE = {
+    ".go":    "Go",
+    ".rs":    "Rust",
+    ".rb":    "Ruby",
+    ".java":  "Java",
+    ".kt":    "Kotlin",
+    ".kts":   "Kotlin",
+    ".scala": "Scala",
+    ".cs":    "C#",
+    ".cpp":   "C++",
+    ".cc":    "C++",
+    ".cxx":   "C++",
+    ".c":     "C",
+    ".swift": "Swift",
+    ".php":   "PHP",
+    ".r":     "R",
+    ".jl":    "Julia",
+    ".lua":   "Lua",
+    ".ex":    "Elixir",
+    ".exs":   "Elixir",
+    ".erl":   "Erlang",
+    ".hs":    "Haskell",
+    ".clj":   "Clojure",
+    ".dart":  "Dart",
+    ".zig":   "Zig",
+    ".pl":    "Perl",
+    ".sh":    "Shell",
+}
+
+# Directory parts to skip when counting languages (noise/deps/generated).
+_LANG_EXCLUDED_DIR_PARTS = frozenset({
+    "node_modules", "vendor", "third_party", "third-party",
+    "site-packages", ".venv", "venv", "__pycache__",
+    ".git", ".github", "dist", "build", "out", "target",
+    "coverage", ".next", ".nuxt",
+})
+
+
+def _detect_other_languages(path: Path) -> List[Dict[str, Any]]:
+    """
+    Walk path and count source files by language for unsupported languages.
+    Returns a list of {"language": str, "count": int} sorted by count descending.
+    Only called when no Python files were found, so Python itself is excluded.
+    """
+    if path.is_file():
+        return []
+
+    counts: Dict[str, int] = {}
+    for p in path.rglob("*"):
+        if not p.is_file():
+            continue
+        parts = {part.lower() for part in p.parts}
+        if parts & _LANG_EXCLUDED_DIR_PARTS:
+            continue
+        lang = _EXT_TO_LANGUAGE.get(p.suffix.lower())
+        if lang:
+            counts[lang] = counts.get(lang, 0) + 1
+
+    return sorted(
+        [{"language": lang, "count": cnt} for lang, cnt in counts.items()],
+        key=lambda x: x["count"],
+        reverse=True,
+    )
 
 
 def _gather_py_files(path: Path) -> List[Path]:
@@ -129,12 +195,20 @@ def scan_path(
     capability_keys = sorted({entry["finding"]["capability"] for entry in findings if entry["finding"].get("capability")})
     risks = analyze_combined_capabilities([entry["finding"] for entry in findings])
 
+    # TypeScript/JavaScript entry point detection
+    ts_entry_points = scan_ts_files(path)
+
+    # Language detection — only when no Python files found, to explain the gap
+    other_languages = _detect_other_languages(path) if not py_files else []
+
     report = {
         "target": str(path),
         "num_files_scanned": len(py_files),
         "findings": findings,
         "capabilities": capability_keys,
         "risks": risks,
+        "ts_entry_points": [ep.as_dict() for ep in ts_entry_points],
+        "other_languages": other_languages,
     }
     return report
 
