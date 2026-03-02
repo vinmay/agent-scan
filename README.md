@@ -61,6 +61,7 @@ The call graph follows up to 8 hops from each entry point. Call paths are shown 
 | LangChain / CrewAI | `@tool`, `class MyTool(BaseTool)` |
 | OpenAI Agents SDK | `@function_tool` |
 | MCP (Python SDK / FastMCP) | `@mcp.tool()`, `@server.tool()` |
+| MCP (lowlevel server API) | `@app.call_tool()`, `@app.list_tools()` |
 | Semantic Kernel | `@kernel_function` |
 | AutoGen | `@register_for_llm` |
 
@@ -74,7 +75,9 @@ Python entry points feed into the reachability pass — the call graph is traced
 
 | Pattern | What it detects | Confidence |
 |---|---|---|
-| `mcp_tool` | `server.tool("name", schema, handler)` | 0.95 |
+| `mcp_tool` | `server.tool("name", schema, handler)` — MCP SDK | 0.95 |
+| `mcp_tool` | `server.registerTool("name", schema, handler)` — MCP SDK v1.6+ | 0.95 |
+| `mcp_tool` | `server.addTool({ name: "...", ... })` — FastMCP | 0.90 |
 | `mcp_tool_definition` | `{ name: "...", description: ..., inputSchema: ... }` objects | 0.85 |
 | `langchain_tool` | `new DynamicTool({ name: "...", ... })` | 0.85 |
 | `mcp_handler` | `server.setRequestHandler(Schema, ...)` | 0.80 |
